@@ -21,6 +21,14 @@ BINANCE_VISION_URL = "https://data.binance.vision/data/spot/monthly/trades"
 DATA_DIR = Path(__file__).parent / "data" / "crypto"
 
 
+def _add_computed_cols(lf: pl.LazyFrame, symbol: str) -> pl.LazyFrame:
+    """Add symbol and datetime columns to a lazy frame."""
+    return lf.with_columns([
+        pl.lit(symbol).alias('symbol').cast(pl.Categorical),
+        pl.from_epoch(pl.col('time'), time_unit='ms').alias('datetime'),
+    ])
+
+
 def download_month_to_parquet(symbol: str, year: int, month: int) -> Path:
     """
     Download monthly trade data from Binance Vision, convert to parquet on disk.
@@ -79,12 +87,6 @@ def download_month_to_parquet(symbol: str, year: int, month: int) -> Path:
     )
     
     logger.info(f"Parsed {len(df):,} trades")
-    
-    # Add symbol and datetime columns
-    df = df.with_columns([
-        pl.lit(symbol).alias('symbol'),
-        pl.from_epoch(pl.col('time'), time_unit='ms').alias('datetime'),
-    ])
     
     # Convert to parquet in memory and save to disk
     symbol_dir = DATA_DIR / symbol
@@ -178,10 +180,12 @@ def query_data(
                 results_by_symbol[symbol].append(df)
     
     # Concatenate results for each symbol after all threads complete (lazy concat)
+    # Then add computed columns as the first feature engineering step
     results = {}
     for symbol in symbols:
         if results_by_symbol[symbol]:
-            results[symbol] = pl.concat(results_by_symbol[symbol])
+            lf = pl.concat(results_by_symbol[symbol])
+            results[symbol] = _add_computed_cols(lf, symbol)
             logger.info(f"Queued {len(results_by_symbol[symbol])} months for {symbol}")
         else:
             logger.warning(f"No data found for {symbol}")
