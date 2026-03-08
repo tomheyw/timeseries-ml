@@ -21,7 +21,7 @@ BINANCE_VISION_URL = "https://data.binance.vision/data/spot/monthly/trades"
 DATA_DIR = Path(__file__).parent / "data" / "crypto"
 
 
-def download_month_to_parquet(symbol: str, year: int, month: int) -> None:
+def download_month_to_parquet(symbol: str, year: int, month: int) -> Path:
     """
     Download monthly trade data from Binance Vision, convert to parquet on disk.
     
@@ -31,7 +31,7 @@ def download_month_to_parquet(symbol: str, year: int, month: int) -> None:
         month: Month (1-12)
     
     Returns:
-        None - writes directly to disk
+        Path to the saved parquet file
     """
     month_str = f"{year}-{month:02d}"
     url = f"{BINANCE_VISION_URL}/{symbol}/{symbol}-trades-{month_str}.zip"
@@ -94,6 +94,7 @@ def download_month_to_parquet(symbol: str, year: int, month: int) -> None:
     df.write_parquet(str(filepath), compression='zstd')
     
     logger.info(f"Saved parquet to {filepath}")
+    return filepath
 
 
 def load_month(symbol: str, year: int, month: int, download_missing: bool) -> pl.LazyFrame | None:
@@ -109,8 +110,8 @@ def load_month(symbol: str, year: int, month: int, download_missing: bool) -> pl
         if download_missing:
             logger.info(f"{symbol} {month_str} not found, downloading...")
             try:
-                # Download writes to disk, then return lazy frame from parquet
-                download_month_to_parquet(symbol, year, month)
+                # Download writes to disk and returns filepath
+                filepath = download_month_to_parquet(symbol, year, month)
                 return pl.scan_parquet(str(filepath))
             except Exception as e:
                 logger.error(f"Failed to download {symbol} {month_str}: {e}")
