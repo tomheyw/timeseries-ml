@@ -126,7 +126,7 @@ def query_data(
         end_date: str,
         download_missing: bool = False,
         num_threads: int = 3
-) -> dict[str, pl.LazyFrame | None]:
+) -> dict[str, pl.LazyFrame]:
     """
     Query trade data from parquet files with multithreading, checking local cache first.
     
