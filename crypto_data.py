@@ -1,5 +1,6 @@
 """
-Download Binance monthly trade tick zip files and convert to parquet in memory.
+Download Binance monthly trade tick zip files and convert to parquet on disk. 
+Return dict of polars lazy frames for queried date range.
 """
 
 import io
@@ -95,7 +96,7 @@ def download_month_to_parquet(symbol: str, year: int, month: int) -> None:
     logger.info(f"Saved parquet to {filepath}")
 
 
-def load_month(symbol: str, year: int, month: int, download_missing: bool) -> pl.LazyFrame:
+def load_month(symbol: str, year: int, month: int, download_missing: bool) -> pl.LazyFrame | None:
     """Load or download a single month of data as a lazy DataFrame."""
     month_str = f"{year}-{month:02d}"
     symbol_dir = DATA_DIR / symbol
@@ -115,7 +116,7 @@ def load_month(symbol: str, year: int, month: int, download_missing: bool) -> pl
                 logger.error(f"Failed to download {symbol} {month_str}: {e}")
                 return None
         else:
-            logger.warning(f"Skipping {symbol} {month_str} - file not found (use download_missing=True to fetch)")
+            logger.warning(f"Skipping {symbol} {month_str}, file not found")
             return None
 
 
@@ -125,7 +126,7 @@ def query_data(
         end_date: str,
         download_missing: bool = False,
         num_threads: int = 3
-) -> dict:
+) -> dict[str, pl.LazyFrame | None]:
     """
     Query trade data from parquet files with multithreading, checking local cache first.
     
@@ -179,7 +180,7 @@ def query_data(
     results = {}
     for symbol in symbols:
         if results_by_symbol[symbol]:
-            results[symbol] = pl.concat(results_by_symbol[symbol], how='diagonal')
+            results[symbol] = pl.concat(results_by_symbol[symbol])
             logger.info(f"Queued {len(results_by_symbol[symbol])} months for {symbol}")
         else:
             logger.warning(f"No data found for {symbol}")
