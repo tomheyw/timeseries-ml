@@ -1,10 +1,13 @@
 # timeseries-ml
 
-Financial time series analysis and ML pipeline for US tech stocks.
+Financial time series machine learning analysis.
 
-**Features:**
-- Downloads & caches 2 years of daily prices (AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA)
-- Log returns, data checks, visualizations
-- Univariate & multivariate stats, cointegration, PCA
-- Lasso feature selection
-- XGBoost & LSTM (PyTorch) for next-day AAPL return prediction
+## Tech Stocks (`tech_timeseries.ipynb`)
+- Daily OHLC (AAPL, MSFT, GOOGL, AMZN, META, NVDA, TSLA)
+- Returns, cointegration, PCA, Lasso
+- XGBoost & LSTM for next-day return prediction
+
+## Crypto (`crypto_data.py`)
+- Binance monthly trade tick data
+- Lazy Polars DataFrames with disk-backed parquet
+- Multi-threaded parallel downloads with caching

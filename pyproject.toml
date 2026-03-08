@@ -15,6 +15,11 @@ dependencies = [
     "xgboost>=3.2.0",
     "scikit-learn>=1.8.0",
     "torch>=2.10.0",
+    "python-binance>=1.0.17",
+    "polars>=0.20.0",
+    "pyarrow>=15.0.0",
+    "requests>=2.31.0",
+    "tqdm>=4.67.3",
 ]
 
 [tool.uv.sources]
